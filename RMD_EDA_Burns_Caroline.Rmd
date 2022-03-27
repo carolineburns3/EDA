@@ -1,0 +1,509 @@
+---
+title: 'Lab 3: EDA'
+author: "Caroline Burns"
+date: "10/15/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r, setup, echo=FALSE, results=FALSE, message = FALSE}
+knitr::opts_knit$set(root.dir = '/Users/carolineburns/Desktop/DS')
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+```
+
+## Business Understanding-Vinho Verde wines
+
+The following datasets used in this exploratory data analysis consist of red and white Vinho Verde wines. These wines come from northwest Portugal and are notable for their slightly fizzy wines (sometimes naturally occurring sometimes by adding CO2). This region's climate is cooler which may result in naturally occurring higher acidity and lower sugar levels. It has become increasingly popular in the last decade or so. The grapes in this region vary in their taste, acidity, and smoothness, so there is still opportunity for varying qualities of wines coming from this region. Additionally, the wine is considered pretty fresh and is well appreciated in the summer. This region is more known for its white wines than red wines. This region's wine is not necessarily known for the best and most expensive wine.
+
+Wine, overall, is made by first growing and harvesting grapes. Then, they are processed for fermentation which includes pressing them to extract the juice. With red wines, the wine is fermented with the grape skins still in place. Next, yeast is used during fermentation to create alcohol with naturally present sugars. Then the wines are there, but they need to be tasted as each batch can be different. 
+
+
+References:
+
+https://www.wtso.com/blog/how-weather-and-climate-affect-wine/
+
+https://vinepair.com/wine-blog/7-things-you-need-to-know-about-vinho-verde/
+
+https://www.vinovest.co/blog/vinho-verde
+
+https://www.2hawk.wine/2018/10/09/how-wine-made/
+
+## Data Understanding and Data Preparation - White Wine
+
+First I will read in the data and look into the white wine characteristics. I needed to specify the separator in the read csv function because the default comma separators are not used in these csv files. The file path is also specified to acquire it from the location on my laptop.
+
+```{r}
+white <- read.csv("/Users/carolineburns/Desktop/DS/Lab3/winequality-white.csv", sep = ";")
+```
+
+First, the I can look at the summary metrics of the white wine dataset to see the ranges, means and medians of the characteristics: 
+
+```{r, echo = FALSE}
+summary(white)
+```
+
+The units of the data can be found in Cortez et al's article on the data. The fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, sulphates, and density are all measured in grams per liter. Free sulfur dioxide and total sulfur dioxide are measured in milligrams per liter. The alcohol content is a volume percentage and pH is the pH scale. The quality of the wine is on a scale from 1 to 10. (http://www3.dsi.uminho.pt/pcortez/wine5.pdf)
+
+To look at the distribution of wine quality, I produced a histogram to see how the wines were rated. We can see that there are mostly middle and lower rated wines in this dataset with less that are high quality.
+
+```{r, echo=FALSE}
+hist(white$quality)
+```
+
+Next, I isolated the high quality wine (above a rating of 6), to see if there were any differences between the overall summary and the high quality wine.
+
+Summary of high quality wine:
+
+```{r, echo=FALSE}
+high <- white %>%
+  filter(quality > 6)
+summary(high)
+```
+
+I could see some differences here, for example the mean alcohol is one higher in the high quality wine then overall, however, I wanted to also isolate low quality wine to see if there were any further noticeable differences between high and low. I filtered to above a quality rating of 6 for high, and below or equal to a quality rating of 6 for low.
+
+Summary of low quality wine:
+
+```{r, echo=FALSE}
+low <- white %>%
+  filter(quality <= 6)
+
+summary(low)
+```
+
+At first glance, I can see some differences between low and high quality wine, but I want to further isolate the really high and low quality wine to see if there are any more obvious differences. So, I filtered for wine above or equal to a quality rating of 7 and below or equal to a quality rating of 5. 
+
+Summary of really high quality wine:
+
+```{r, echo=FALSE}
+reallyhigh <- white %>%
+  filter(quality >= 7)
+summary(reallyhigh)
+```
+
+Summary of really low quality wine: 
+
+```{r, echo=FALSE}
+reallylow <- white %>%
+  filter(quality <= 5)
+summary(reallylow)
+```
+
+Looking at the means and medians, as well as the ranges, in the summary metrics between really high and low quality wine, I can see noticeable differences in volatile acidity, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, and alcohol content. Density is also interesting because its range is so narrow so at first glance looks no different between the two. I will continue to evaluate these variables in how they might be related to quality to ensure that the summary statistics are not misleading.
+
+## Data Modeling and Evaluation 
+
+Next I want to produce a number of scatter plots to further explore the relationships between the quality and various characteristics. After each scatterplot, I perform a Spearman's correlation test. This is used because the Spearman's tests is used when one of the data is ordinal. Additionally, I add into the correlation tests: "exact = FALSE" which tells R that exact p-values don't need to be computed since it is a Spearman test. I decided to do correlation and not regression tests because I am only trying to find relationships between variables, I don't need to be able to infer other data points. Correlation tests is a simple way to test the relationship. 
+
+The basis of the plots I created are ggplot scatterplots, with the jitter added in order to more easily see each data point. A regression line is added as well to help visually see the relationships.
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = volatile.acidity, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and volatile acidity")
+```
+
+Correlation test between quality and volatile acidity:
+
+```{r, echo=FALSE}
+cor.test(white$volatile.acidity, white$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = chlorides, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and chlorides")
+```
+
+Correlation test between quality and chlorides:
+
+```{r, echo = FALSE}
+cor.test(white$chlorides, white$quality, method = "spearman", exact = FALSE)
+```
+
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = total.sulfur.dioxide, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and total sulfur dioxide")
+```
+
+Correlation test between quality and total sulfur dioxide:
+
+```{r, echo = FALSE}
+cor.test(white$total.sulfur.dioxide, white$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = free.sulfur.dioxide, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between free sulfur dioxide and qine quality")
+```
+
+Correlation test between quality and free sulfur dioxide:
+
+```{r, echo=FALSE}
+cor.test(white$quality, white$free.sulfur.dioxide, method = "spearman", exact = FALSE)
+```
+
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = density, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and density")
+```
+
+Correlation test between quality and density:
+
+```{r, echo = FALSE}
+cor.test(white$density, white$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = sulphates, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and sulphates")
+```
+
+Correlation test between quality and sulphates:
+
+```{r, echo = FALSE}
+cor.test(white$sulphates, white$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = alcohol, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and alcohol content")
+```
+
+Correlation test between quality and alcohol:
+
+```{r, echo=FALSE}
+cor.test(white$alcohol, white$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = residual.sugar, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and residual sugar")
+```
+
+Correlation test between quality and residual sugar:
+
+```{r, echo = FALSE}
+cor.test(white$residual.sugar, white$quality, method = "spearman", exact = FALSE)
+```
+
+Next I explore the relationship between density and alcohol content or residual sugar. Wine legs is a phenomenon of droplets of wine collecting on the sides of a glass, which usually indicates a higher density wine as well as higher either higher alcohol content or residual sugar. (https://winefolly.com/tips/wine-legs/) The relationship's can be seen below: 
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = residual.sugar, y = density)) + geom_point() + geom_smooth(method=lm) + ggtitle("Relationship between density and residual sugar")
+```
+
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = alcohol, y = density)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between density and alcohol content")
+```
+
+I next decided to visualize the relationship between residual sugar and total sulfur dioxide because of an article that stated that sweeter wines often have more sulfur dioxide because it offers more protection: https://www.wineshopathome.com/understanding-sulfur-levels-wine/
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = white, aes(x = residual.sugar, y = total.sulfur.dioxide)) + geom_point() + geom_smooth(method=lm) + ggtitle("Relationship between total sulfur dioxide and residual sugar")
+```
+
+### Statistical Testing
+
+Next, I want to look at the distributions of the variables within high and low quality wine to see what statistical test I can continue on with. If the distributions are normal I can conduct a t-test, however, if they aren't I will continue on with non-parametric tests which do not assume normality.
+
+```{r, echo = FALSE}
+hist(low$volatile.acidity)
+hist(high$volatile.acidity)
+hist(low$residual.sugar)
+hist(high$residual.sugar)
+hist(low$chlorides)
+hist(high$chlorides)
+hist(low$free.sulfur.dioxide)
+hist(high$free.sulfur.dioxide)
+hist(low$total.sulfur.dioxide)
+hist(high$total.sulfur.dioxide)
+hist(low$alcohol)
+hist(high$alcohol)
+hist(low$density)
+hist(high$density)
+hist(low$sulphates)
+hist(high$sulphates)
+```
+
+These are not all normally distributed so I will conduct Wilcoxon Rank Sum tests which is a non-parametric test which tests to see if the distributions (the medians) are significantly different. The alternative hypothesis is essentially saying that the differences in the median (true location shift) is not equal to zero. The null hypothesis is that the differences in the median and distribution is equal to zero. The tests will be conducted in this order: volatile acidity, residual sugar, chlorides, free sulfur dioxide, total sulfur dioxide, alcohol content, density, and sulphates. After each test result, the medians of each group are printed (low then high) since the test does not print it.
+
+```{r, echo = FALSE}
+wilcox.test(low$volatile.acidity, high$volatile.acidity)
+median(low$volatile.acidity)
+median(high$volatile.acidity)
+wilcox.test(low$residual.sugar, high$residual.sugar)
+median(low$residual.sugar)
+median(high$residual.sugar)
+wilcox.test(low$chlorides, high$chlorides)
+median(low$chlorides)
+median(high$chlorides)
+wilcox.test(low$free.sulfur.dioxide, high$free.sulfur.dioxide)
+median(low$free.sulfur.dioxide)
+median(high$free.sulfur.dioxide)
+wilcox.test(low$total.sulfur.dioxide, high$total.sulfur.dioxide)
+median(low$total.sulfur.dioxide)
+median(high$total.sulfur.dioxide)
+wilcox.test(low$alcohol, high$alcohol)
+median(low$alcohol)
+median(high$alcohol)
+wilcox.test(low$density, high$density)
+median(low$density)
+median(high$density)
+wilcox.test(low$sulphates, high$sulphates)
+median(low$sulphates)
+median(high$sulphates)
+```
+
+
+## Insights - White Wine
+
+There is a negative relationship between volatile acidity and quality of wine, meaning that the higher the volatile acidity, the lower the quality of the wine tends to be. There is a similar relationship with chlorides, which is the saltiness in wine (https://www.awri.com.au/wp-content/uploads/2018/08/s1530.pdf). 
+
+The relationship between total sulfur dioxide and quality is interesting. It is negative, indicating that the more sulfur dioxide the lower the quality. This article highlights that less sulfur dioxide is needed when the fruit is cold and fresh, which might indicate that it's not necessarily the sulfur dioxide that is making a higher quality wine, rather the quality of the fruit. It may also be due to the colder climate in the Vinho Verde region. (https://www.wineshopathome.com/understanding-sulfur-levels-wine/) Additionally, free sulfur dioxide and quality do not have a significant relationship. The correlation is close to zero and the p-value in the non-parametric test is not significant, we fail to reject the null hypothesis, the distributions and median are not significantly different. 
+
+There is also a negative relationship between density and wine quality. There is a positive relationship between sulphates and quality, however the relationship is fairly weak. When conducting a test to see if there is a significant difference between the median density and quality between low and high quality wine, the difference was significant, indicating that the relationship of each is noteworthy.
+
+The non-parametric test between quality and sulphate levels is not significant. We fail to reject the null hypothesis that the difference in the medians is zero. The p-value is 0.13 indicating that it is not significant. The correlation test was very close to zero, even though the p-value was significant. This likely means that the sulphate level does not seem to be related to white wine quality.
+
+There is a strong positive relationship between wine quality and alcohol content. This relationship may be very notable. This Forbes article highlighted that more recently, higher alcohol content wines have been gaining attention. It was discussing this specifically in relation to red wines, but it said there was a similar pattern for white wines. The article discussed that these higher alcohol content wines are "big-bodied" and noticeable to consumers which may make them more noteworthy. (https://www.forbes.com/sites/johnmariani/2021/06/01/why-are-wines-alcohol-content-growing-so-high-and-why-thats-a-real-problem/?sh=52bb16a23167)
+
+Next, the relationship between quality and residual sugar is negative, indicating that the sweeter the wine the lower quality it may be. I wanted to further explore the relationship between density and sugar or alcohol content. This positive relationship (visually) is not seen for alcohol content, which may indicate that in these wines the residual sugar is more impactful to the density. Interestingly, both density and residual sugar are negatively related to wine quality. This is noteworthy to understand when looking to create high quality wines.
+
+The relationship between residual sugar and total sulfur dioxide indicates that the higher the sugar the higher the sulfur dioxide. Again, both total sulfur dioxide and residual sugar are negatively related to quality among these wines. Perhaps when more sugars are added to the wine, there is further need for sulfur dioxide as a preservative which may contribute to the lower quality wine.
+
+I wanted to conduct Wilcox tests to see if the differences between high and low quality wine remained significant as seen in the correlation tests. Volatile acidity, residual sugar, chlorides, total sulfur dioxide, alcohol content, and density all have significant differences between low and high quality wine. Free sulfur dioxide again did not have a significant difference with a p-value of 0.42. This indicates that the true difference in the medians could be zero, simply put, there could be no significant difference. Imply put, free sulfur dioxide is not related to white wine quality.
+
+Overall, lower quality wine compared to higher quality wine tends to have more volatile acidity, more residual sugar, more chlorides, higher total sulfur dioxide, lower alcohol content, and higher density. Higher density should not be achieved with higher residual sugars, though, and can be achieved with higher alcohol content. Due to the rising popularity in high alcohol content wines, this is something to keep in mind. All of these characteristics should be taken into account in the wine making process. These tests null hypotheses can be rejected. 
+
+
+## Data Understanding and Data Preparation - Red Wine
+
+First, I will load in the red wine dataset. Again, I will specify the separators and file path.
+
+```{r}
+red <- read.csv("/Users/carolineburns/Desktop/DS/Lab3/winequality-red.csv", sep = ";")
+```
+
+First, I want to look at the summary statistics for the red wine dataset.
+
+```{r}
+summary(red)
+```
+
+The units of the data can be found in Cortez et al's article on the data. The fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, sulphates, and density are all measured in grams per liter. Free sulfur dioxide and total sulfur dioxide are measured in milligrams per liter. The alcohol content is a volume percentage and pH is the pH scale. The quality of the wine is on a scale from 1 to 10, with 1 being the lowest quality and 10 being the highest.
+
+As with the white wine, I want to look at the distribution of the quality of the red wines. Again, similar to the white wine, there are more lower quality wines than higher quality, but overall pretty evenly distributed.
+
+```{r}
+hist(red$quality)
+```
+
+Next, I wanted to again filter for the high quality and low quality wines, so I filtered for quality above 6 and equal to or below 6. I can then look at the summary statistics for each to see if there are any apparent differences.
+
+Summary of high quality red wine:
+
+```{r, echo = FALSE}
+highred <- red %>%
+  filter(quality > 6)
+summary(highred)
+```
+
+Summary of low quality red wine:
+
+```{r, echo=FALSE}
+lowred <- red %>%
+  filter(quality <= 6)
+summary(lowred)
+```
+
+I notice apparent differences in fixed acidity, volatile acidity, citric acid, residual sugar, chlorides, free and total sulfur dioxide, sulphates, and alcohol content. Again, the range for density is low so I will continue to look into the relationship.
+
+Similar to the white wine, I want to look even closer at really high quality red wine and really low quality. I will filter again as I did with the white wine dataset.
+
+Summary of really high quality red wine:
+
+```{r, echo = FALSE}
+rhigh <- red %>%
+  filter(quality > 7)
+
+summary(rhigh)
+```
+
+Summary of really low quality red wine:
+
+```{r, echo = FALSE}
+rlow <- red %>%
+  filter(quality < 5)
+
+summary(rlow)
+```
+
+Again, I continue to see differences in fixed acidity, volatile acidity, citric acid, residual sugar (doesn't seem very significantly different), chlorides, free and total sulfur dioxide, sulphates, and alcohol content.
+
+## Data Modeling and Evaluation - Red Wine 
+
+Next, I will visualize the differences in the variables mentioned previously. I will use scatterplots with jitter applied in order to more clearly see the different data points. A regression line is also added in order to more clearly see the relationship. 
+
+After each scatterplot, I perform a Spearman's correlation test. This is used because the Spearman's tests is used when one of the data is ordinal. Additionally, I add into the correlation tests: "exact = FALSE" which tells R that exact p-values don't need to be computed since it is a Spearman test. I decided to do correlation and not regression tests because I am only trying to find relationships between variables, I don't need to be able to infer other data points. Correlation tests is a simple way to test the relationship.
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = fixed.acidity, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and fixed acidity")
+```
+
+Correlation test between quality and fixed acidity:
+
+```{r, echo = FALSE}
+cor.test(red$fixed.acidity, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = volatile.acidity, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and volatile acidity")
+```
+
+Correlation test between quality volatile acidity:
+
+```{r, echo = FALSE}
+cor.test(red$volatile.acidity, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = citric.acid, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and citric acid")
+```
+
+Correlation test between quality and citric acid:
+
+```{r, echo = FALSE}
+cor.test(red$citric.acid, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = residual.sugar, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and residual sugar")
+```
+
+Correlation test between quality and residual sugar:
+
+```{r, echo = FALSE}
+cor.test(red$residual.sugar, red$quality, method = "spearman", exact = FALSE)
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = chlorides, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and chlorides")
+```
+
+Correlation test between quality and chlorides:
+
+```{r, echo = FALSE}
+cor.test(red$chlorides, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = total.sulfur.dioxide, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and total sulfur dioxide")
+```
+
+Correlation test between quality and total sulfur dioxide:
+
+```{r, echo = FALSE}
+cor.test(red$total.sulfur.dioxide, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = free.sulfur.dioxide, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and free sulfur dioxide")
+```
+
+Correlation test between quality and free sulfur dioxide:
+
+```{r, echo = FALSE}
+cor.test(red$free.sulfur.dioxide, red$quality, method = "spearman", exact = FALSE) 
+``` 
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = sulphates, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and sulphates")
+```
+
+Correlation test between quality and sulphates:
+
+```{r, echo = FALSE}
+cor.test(red$sulphates, red$quality, method = "spearman", exact = FALSE) 
+```
+
+```{r, echo = FALSE, message=FALSE}
+ggplot(data = red, aes(x = alcohol, y = quality)) + geom_point(position = "jitter") + geom_smooth(method=lm) + ggtitle("Relationship between wine quality and alcohol content")
+```
+
+Correlation test between quality and alcohol content:
+
+```{r, echo = FALSE}
+cor.test(red$alcohol, red$quality, method = "spearman", exact = FALSE) 
+```
+
+### Statistical Testing
+
+Next, I want to look at the distributions of the variables within high and low quality wine to see what statistical test I can continue on with. If the distributions are normal I can conduct a t-test, however, if they aren't I will continue on with non-parametric tests which do not assume normality.
+
+```{r, echo = FALSE}
+hist(lowred$volatile.acidity)
+hist(highred$volatile.acidity)
+hist(lowred$fixed.acidity)
+hist(highred$fixed.acidity)
+hist(lowred$citric.acid)
+hist(highred$citric.acid)
+hist(lowred$residual.sugar)
+hist(highred$residual.sugar)
+hist(lowred$chlorides)
+hist(highred$chlorides)
+hist(lowred$total.sulfur.dioxide)
+hist(highred$total.sulfur.dioxide)
+hist(lowred$free.sulfur.dioxide)
+hist(highred$free.sulfur.dioxide)
+hist(lowred$alcohol)
+hist(highred$alcohol)
+hist(lowred$sulphates)
+hist(highred$sulphates)
+```
+
+These variables are not normally distributed, so I will do Wilcoxon Rank Sum tests again, which are non-parametric statistical tests when normal distribution can not assumed. A test between the two groups will be another meaningful check for differences between the high and low quality red wines.
+
+I will perform the tests on variables with significant correlations with wine quality from previously, in this order: fixed acidity, volatile acidity, citric acid, chlorides, total sulfur dioxide, free sulfur dioxide, sulphates, and alcohol content. After each test, I display the low and then high quality median of each of the attributes since the test does not output the medians.
+
+```{r, echo = FALSE}
+wilcox.test(lowred$volatile.acidity, highred$volatile.acidity)
+median(lowred$volatile.acidity)
+median(highred$volatile.acidity)
+wilcox.test(lowred$fixed.acidity, highred$fixed.acidity)
+median(lowred$fixed.acidity)
+median(highred$fixed.acidity)
+wilcox.test(lowred$citric.acid, highred$citric.acid)
+median(lowred$citric.acid)
+median(highred$citric.acid)
+wilcox.test(lowred$chlorides, highred$chlorides)
+median(lowred$chlorides)
+median(highred$chlorides)
+wilcox.test(lowred$total.sulfur.dioxide, highred$total.sulfur.dioxide)
+median(lowred$total.sulfur.dioxide)
+median(highred$total.sulfur.dioxide)
+wilcox.test(lowred$free.sulfur.dioxide, highred$free.sulfur.dioxide)
+median(lowred$free.sulfur.dioxide)
+median(highred$free.sulfur.dioxide)
+wilcox.test(lowred$sulphates, highred$sulphates)
+median(lowred$sulphates)
+median(highred$sulphates)
+wilcox.test(lowred$alcohol, highred$alcohol)
+median(lowred$alcohol)
+median(highred$alcohol)
+```
+
+
+## Insights - Red Wine
+
+There is a positive significant, but weak, relationship between wine quality and fixed acidity. There is a negative relationship between volatile acidity and wine quality. This relationship is likely important because this article highlights two things. First, that some wine makers like to have very low levels of this specific acid to add to the complexity of the wine and second, that the addition of this can sometimes lead to undesirable aromas. (https://waterhouse.ucdavis.edu/whats-in-wine/volatile-acidity) Additionally, sometimes volatile acidity occurs when there is too much oxygen exposure during the wine making process. This relationship then make sense, that as volatile acidity increases, quality decreases. (https://winefolly.com/deep-dive/weird-wine-flavors-and-the-science-behind-them/)
+
+A positive relationship between wine quality and citric acid indicates that more citric acid tends to mean it is a higher quality wine. Citric acid can be added to accentuate a specific flavor in the wine, so this could be its role in these red wines. The relationship is not very strong, though. (https://wineserver.ucdavis.edu/industry-info/enology/methods-and-techniques/common-chemical-reagents/citric-acid)
+
+The relationship in the correlation test between wine quality and residual sugar is not significant. The correlation is close to zero and the p-value is greater than 0.05. This means that the amount of residual sugar is not significantly related to the quality of the red wine. 
+
+The relationship between chlorides and quality of red wine is negative. This is the saltiness in wines, and visually, it seems to be that the middle tier wines have the highest levels of it. The relationship is significant in both the correlation and non-parametric test. The relationship between quality and total sulfur dioxide is also negative. Sulfur dioxide is used as a preservative in wines, so potentially using too much could reduce the quality of the wine. The relationship with free sulfur dioxide is significant but it's correlation is weak. The higher quality wines tend to have less free sulfur dioxide, though. 
+
+The relationship between wine quality and sulphates is positive. Sulphates protect from unwanted reactions with the wine, maintaining the quality of it. This may indicate that higher quality wine may have more due to interest in maintaining its quality and to avoid reactions. (https://www.terlatowines.com/knowledge/sulfur-dioxide-and-its-role-winemaking)
+
+The relationship between quality and alcohol is positive, as it was with the white wine. This may again be important as there have increasingly been trends of higher alcohol content wine leaving a more notable impression on quality.
+
+On average, lower quality red wine tends to have higher volatile acidity, lower fixed acidity, lower citric acid, higher chlorides, higher total sulfur dioxide, higher free sulfur dioxide, less sulphates, and lower alcohol content. These characteristics are important to consider when wine producers analyze their own wine characteristics. Because of more interest in high alcohol content wines, this should be considered by wine producers looking to attract consumers. Sulphates are seemingly put to good use in high quality red wines, so potentially this could be used when creating higher quality red wines. Sulfur dioxide's use as a preservative could impact the quality in a negative way so producers should keep studying this relationship further. The residual sugar does not have a relationship to quality in the same way that it did in white wines, indicating that the sugar levels might not be as important in the red wines. Volatile acidity it appears, should be avoided, however, this relationship is not necessarily causal, so this should be further explored.
+
